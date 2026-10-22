@@ -47,6 +47,8 @@
         <label><input type="checkbox" id="strip-boilerplate" checked> Fjern meny, topp- og bunntekst</label>
         <label><input type="checkbox" id="respect-robots" checked> Respekter robots.txt</label>
       </div>
+      <p class="note" id="proxy-note" hidden>Nettleseren slipper ikke denne siden til å hente andre nettsteder direkte (CORS).
+        Legg inn en proxy under «Avanserte innstillinger» for å skanne nettsteder. PDF-analyse virker uten.</p>
       <button type="submit" class="primary">Skann nettsted</button>
     </form>
 
@@ -56,8 +58,13 @@
         <label><input type="checkbox" id="drop-repeated" checked> Ignorer gjentatte linjer (topp-/bunntekst som går igjen på hver side)</label>
         <label><input type="checkbox" id="space-thousands" checked> Mellomrom er tusenskille («1 234 567» er ett tall)</label>
       </div>
+      <label class="field wide">Proxy for nettsider (<code>{url}</code> erstattes med adressen som hentes)
+        <input type="text" id="proxy" placeholder="https://min-proxy.workers.dev/?url={url}" spellcheck="false" autocomplete="off">
+      </label>
+      <p class="hint">Lagres bare i denne nettleseren. Se README for hvordan du setter opp en gratis proxy på Cloudflare.</p>
     </details>
     <p class="status" id="status" role="status"></p>
+    <p class="hint" id="engine"></p>
   </section>
 
   <section id="results" hidden>
@@ -126,6 +133,6 @@
   </section>
 </main>
 <div id="tooltip" class="tooltip" hidden></div>
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

@@ -83,7 +83,7 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 .row.tight { gap: 8px; }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-2); flex: 1 1 160px; margin-bottom: 12px; }
 .field.wide { flex-basis: 100%; }
-input[type="url"], input[type="number"], select {
+input[type="url"], input[type="number"], input[type="text"], select {
   font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px 10px; min-width: 0;
 }
@@ -191,3 +191,6 @@ th { color: var(--muted); font-weight: 600; }
 #sources a { color: var(--accent); }
 .err { color: var(--bad); }
 .about p { color: var(--text-2); max-width: 80ch; }
+.note { font-size: 13px; color: var(--text-2); background: color-mix(in srgb, var(--warn) 12%, transparent); border-radius: 8px; padding: 8px 12px; margin: 0; }
+#engine.error { color: var(--bad); }
+code { font-size: 12px; }

@@ -1,4 +1,4 @@
-"use strict";
+import { analyse, crawl, getProxy, loadEngine, pdfPages, setProxy } from "./engine.js";
 
 const $ = (s) => document.querySelector(s);
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -55,15 +55,12 @@ function setStatus(msg, isError = false, busy = false) {
   el.innerHTML = (busy ? '<span class="spinner"></span>' : "") + esc(msg);
 }
 
-async function run(promise, busyMsg) {
+async function run(task, busyMsg) {
   setStatus(busyMsg, false, true);
   document.querySelectorAll("button.primary").forEach((b) => (b.dataset.wasDisabled = b.disabled, b.disabled = true));
   const t0 = performance.now();
   try {
-    const res = await promise;
-    const body = await res.json().catch(() => ({ error: `Serveren svarte ${res.status}` }));
-    if (!res.ok || body.error) throw new Error(body.error || `Serveren svarte ${res.status}`);
-    data = body;
+    data = await task();
     included = new Set(data.categories.filter((c) => c.included).map((c) => c.key));
     exLimit = 100;
     renderAll();
@@ -80,29 +77,56 @@ async function run(promise, busyMsg) {
 
 $("#pdf-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  const fd = new FormData();
-  [...fileInput.files].forEach((f) => fd.append("file", f));
-  fd.append("options", JSON.stringify(extractOptions()));
-  run(fetch("/api/pdf", { method: "POST", body: fd }), "Leser PDF og finner tall …");
+  const files = [...fileInput.files];
+  run(async () => {
+    const docs = [];
+    for (const [i, f] of files.entries()) {
+      setStatus(`Leser ${f.name} (${i + 1}/${files.length}) …`, false, true);
+      try {
+        docs.push({ name: f.name, kind: "pdf", depth: 0, pages: await pdfPages(new Uint8Array(await f.arrayBuffer())), error: null });
+      } catch (err) {
+        docs.push({ name: f.name, kind: "pdf", depth: 0, pages: [], error: `Kunne ikke lese PDF: ${err.message}` });
+      }
+    }
+    setStatus("Finner og klassifiserer tall …", false, true);
+    return analyse(docs, extractOptions());
+  }, "Leser PDF …");
 });
 
 $("#url-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  const body = {
-    url: $("#url").value,
-    max_depth: +$("#max-depth").value,
-    max_pages: +$("#max-pages").value,
-    same_site: $("#same-site").checked,
-    include_pdfs: $("#include-pdfs").checked,
-    strip_boilerplate: $("#strip-boilerplate").checked,
-    respect_robots: $("#respect-robots").checked,
-    ...extractOptions(),
+  const o = {
+    maxDepth: Math.max(0, Math.min(5, +$("#max-depth").value || 0)),
+    maxPages: Math.max(1, Math.min(500, +$("#max-pages").value || 1)),
+    sameSite: $("#same-site").checked,
+    includePdfs: $("#include-pdfs").checked,
+    stripBoilerplate: $("#strip-boilerplate").checked,
+    respectRobots: $("#respect-robots").checked,
   };
-  run(
-    fetch("/api/url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
-    `Skanner inntil ${body.max_pages} sider, ${body.max_depth} nivå(er) ut … dette kan ta litt tid.`
-  );
+  run(async () => {
+    const docs = await crawl($("#url").value.trim(), o, (n, depth) =>
+      setStatus(`Hentet ${n} av maks ${o.maxPages} sider (nivå ${depth}) …`, false, true));
+    setStatus("Finner og klassifiserer tall …", false, true);
+    return analyse(docs, extractOptions());
+  }, `Skanner inntil ${o.maxPages} sider, ${o.maxDepth} nivå(er) ut …`);
 });
+
+// ---------------------------------------------------------------- engine + proxy settings
+
+const proxyInput = $("#proxy");
+proxyInput.value = getProxy();
+proxyInput.addEventListener("change", () => { setProxy(proxyInput.value.trim()); showProxyNote(); });
+function showProxyNote() {
+  $("#proxy-note").hidden = !!getProxy().trim();
+}
+showProxyNote();
+
+const engineEl = $("#engine");
+engineEl.textContent = "Laster analysemotoren (Python i nettleseren) …";
+loadEngine().then(
+  () => { engineEl.textContent = "Analysemotoren er klar. Alt kjøres lokalt i nettleseren din."; },
+  (err) => { engineEl.textContent = "Kunne ikke laste analysemotoren: " + err.message; engineEl.classList.add("error"); }
+);
 
 // ---------------------------------------------------------------- statistics
 
