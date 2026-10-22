@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benford-sjekk</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1>Benford-sjekk</h1>
+    <p class="lede">Sjekker om første siffer i de <em>naturlige</em> tallene i en PDF eller på et nettsted følger Benfords lov.
+      Datoer, klokkeslett, årstall, telefonnumre, sidetall, koder og lignende filtreres bort automatisk.</p>
+  </header>
+
+  <section class="card input">
+    <div class="tabs" role="tablist">
+      <button role="tab" class="tab active" data-tab="pdf" aria-selected="true">PDF</button>
+      <button role="tab" class="tab" data-tab="url" aria-selected="false">Nettsted</button>
+    </div>
+
+    <form id="pdf-form" class="panel" data-panel="pdf">
+      <label class="drop" id="drop">
+        <input type="file" id="pdf-file" accept="application/pdf,.pdf" multiple hidden>
+        <span class="drop-main">Slipp PDF-filer her eller <u>velg filer</u></span>
+        <span class="drop-sub" id="file-names">Flere filer analyseres samlet</span>
+      </label>
+      <button type="submit" class="primary" id="pdf-go" disabled>Analyser PDF</button>
+    </form>
+
+    <form id="url-form" class="panel" data-panel="url" hidden>
+      <label class="field wide">Adresse
+        <input type="url" id="url" placeholder="https://www.ssb.no/" required>
+      </label>
+      <div class="row">
+        <label class="field">Nivåer ut (lenkedybde)
+          <input type="number" id="max-depth" min="0" max="5" value="1">
+        </label>
+        <label class="field">Maks antall sider
+          <input type="number" id="max-pages" min="1" max="500" value="25">
+        </label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="same-site" checked> Bare samme nettsted</label>
+        <label><input type="checkbox" id="include-pdfs" checked> Ta med lenkede PDF-er</label>
+        <label><input type="checkbox" id="strip-boilerplate" checked> Fjern meny, topp- og bunntekst</label>
+        <label><input type="checkbox" id="respect-robots" checked> Respekter robots.txt</label>
+      </div>
+      <button type="submit" class="primary">Skann nettsted</button>
+    </form>
+
+    <details class="advanced">
+      <summary>Avanserte innstillinger for uttrekk</summary>
+      <div class="checks">
+        <label><input type="checkbox" id="drop-repeated" checked> Ignorer gjentatte linjer (topp-/bunntekst som går igjen på hver side)</label>
+        <label><input type="checkbox" id="space-thousands" checked> Mellomrom er tusenskille («1 234 567» er ett tall)</label>
+      </div>
+    </details>
+    <p class="status" id="status" role="status"></p>
+  </section>
+
+  <section id="results" hidden>
+    <div class="card verdict" id="verdict"></div>
+
+    <div class="grid">
+      <section class="card chart-card">
+        <div class="card-head">
+          <h2>Fordeling av første siffer</h2>
+          <div class="legend">
+            <span><i class="sw sw-obs"></i>Observert</span>
+            <span><i class="sw sw-exp"></i>Benfords lov</span>
+          </div>
+        </div>
+        <div id="chart" class="chart"></div>
+        <p class="hint">Klikk på en søyle for å se tallene med det første sifferet.</p>
+        <details class="table-view">
+          <summary>Vis som tabell</summary>
+          <div id="digit-table"></div>
+        </details>
+      </section>
+
+      <section class="card filter-card">
+        <h2>Hva telles med?</h2>
+        <p class="hint">Huk av kategoriene som skal inngå i analysen. Antall i parentes.</p>
+        <div id="categories" class="cats"></div>
+        <label class="unique"><input type="checkbox" id="unique-only"> Tell hver unike tallverdi bare én gang</label>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <h2 id="examples-title">Tall som er funnet</h2>
+        <div class="row tight">
+          <select id="ex-cat" aria-label="Kategori"></select>
+          <select id="ex-digit" aria-label="Første siffer">
+            <option value="">Alle siffer</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+            <option>6</option><option>7</option><option>8</option><option>9</option>
+          </select>
+        </div>
+      </div>
+      <ul id="examples" class="examples"></ul>
+      <button id="more" class="secondary" hidden>Vis flere</button>
+    </section>
+
+    <section class="card" id="sources-card">
+      <h2>Kilder</h2>
+      <div id="sources"></div>
+    </section>
+
+    <section class="card about">
+      <h2>Om testen</h2>
+      <p><strong>Benfords lov</strong> sier at i mange naturlige datasett (beløp, befolkningstall, målinger) er første siffer
+        1 i ca. 30,1 % av tilfellene, 2 i 17,6 %, og videre ned til 9 i bare 4,6 %: P(d) = log₁₀(1 + 1/d).
+        Den gjelder best for tall som spenner over flere størrelsesordener.</p>
+      <p><strong>MAD</strong> (gjennomsnittlig absolutt avvik) vurderes etter Nigrinis grenser for første siffer:
+        under 0,006 nært samsvar, 0,006–0,012 akseptabelt, 0,012–0,015 marginalt, over 0,015 ikke samsvar.
+        MAD er lite følsom for antall tall og er hovedmålet her.</p>
+      <p><strong>Kjikvadrattest</strong> (8 frihetsgrader) gir en p-verdi. Med mange tall blir den svært følsom –
+        selv små, uinteressante avvik blir «signifikante».</p>
+      <p><strong>z-verdi</strong> per siffer (med kontinuitetskorreksjon) viser hvilke siffer som avviker; |z| &gt; 1,96 er signifikant på 5 %-nivå.</p>
+      <p>Avvik fra Benford er <em>ikke</em> bevis på manipulasjon. Mange tallsett følger naturlig ikke loven
+        (priser som slutter på 99, tall med fast øvre grense, tildelte nummer).</p>
+    </section>
+  </section>
+</main>
+<div id="tooltip" class="tooltip" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>
