@@ -29,7 +29,9 @@ Gratis oppsett med Cloudflare Workers (100 000 forespørsler per dag gratis):
 1. Lag en gratis konto på https://dash.cloudflare.com og velg *Workers & Pages → Create → Hello World*.
 2. Erstatt koden med innholdet i [`worker/proxy.js`](worker/proxy.js), og trykk *Deploy*.
    Proxyen svarer bare til origin-ene i `ALLOWED_ORIGINS`, så andre nettsteder kan ikke misbruke den.
-3. Lim inn `https://<navn>.<konto>.workers.dev/?url={url}` som proxy i appen.
+3. Lim inn `https://<navn>.<konto>.workers.dev/?url={url}` som proxy i appen, eller sett den som `DEFAULT_PROXY` i [`static/engine.js`](static/engine.js).
+
+Den publiserte appen bruker som standard proxyen `rough-snow-7629.mbj-login.workers.dev`.
 
 Når appen kjøres lokalt, brukes den innebygde proxyen i `app.py` automatisk.
 

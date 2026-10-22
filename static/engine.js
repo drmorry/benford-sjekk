@@ -4,6 +4,8 @@
 
 const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/";
 const PROXY_KEY = "benford.proxy";
+// Cloudflare Worker from worker/proxy.js; only answers requests from this app.
+const DEFAULT_PROXY = "https://rough-snow-7629.mbj-login.workers.dev/?url={url}";
 const MAX_BYTES = 25 * 1024 * 1024;
 const SKIP_EXT = /\.(?:jpe?g|png|gif|webp|svg|ico|bmp|tiff?|mp[34]|m4a|wav|ogg|webm|avi|mov|zip|gz|tgz|rar|7z|exe|msi|dmg|iso|css|js|json|xml|rss|woff2?|ttf|eot|docx?|xlsx?|pptx?|odt|ods|csv)$/i;
 
@@ -92,7 +94,7 @@ export function getProxy() {
     const saved = localStorage.getItem(PROXY_KEY);
     if (saved !== null) return saved;
   } catch { /* storage unavailable */ }
-  return isLocal ? "proxy?url={url}" : "";
+  return isLocal ? "proxy?url={url}" : DEFAULT_PROXY;
 }
 export function setProxy(v) {
   try { localStorage.setItem(PROXY_KEY, v); } catch { /* ignore */ }
